@@ -91,58 +91,47 @@ public class ballController : MonoBehaviour
     }
     #endregion
 
-   #region Touch Input
-void HandleTouchInput()
-{
-    if (Input.touchCount == 0)
+    #region Touch Input
+    void HandleTouchInput()
     {
-        isDragging = false;
-        return;
-    }
+        if (Input.touchCount == 0)
+        {
+            isDragging = false;
+            return;
+        }
 
-    Touch touch = Input.GetTouch(0);
-    Vector3 worldPos = GetWorldPositionFromScreen(touch.position);
-    worldPos.z = 0;
+        Touch touch = Input.GetTouch(0);
+        Vector3 worldPos = GetWorldPositionFromScreen(touch.position);
+        worldPos.z = 0;
 
-    switch (touch.phase)
-    {
-        case TouchPhase.Began:
-            Collider2D hit = Physics2D.OverlapPoint(worldPos, ballLayer);
-            if (hit != null && hit.gameObject == gameObject)
-            {
-                isDragging = true;
-                dragOffset = transform.position - worldPos;
-            }
-            break;
-
-        case TouchPhase.Moved:
-        case TouchPhase.Stationary:
-            if (isDragging)
-            {
-                Vector3 target = worldPos + dragOffset;
-                target.y = transform.position.y;
-                target.x = Mathf.Clamp(target.x, minPos, maxPos);
-                transform.position = Vector3.Lerp(transform.position, target, touchSmoothness * Time.deltaTime);
-            }
-            else
-            {
-                // Attempt to reinitialize dragging if not already active
-                Collider2D retryHit = Physics2D.OverlapPoint(worldPos, ballLayer);
-                if (retryHit != null && retryHit.gameObject == gameObject)
+        switch (touch.phase)
+        {
+            case TouchPhase.Began:
+                Collider2D hit = Physics2D.OverlapPoint(worldPos, ballLayer);
+                if (hit != null && hit.gameObject == gameObject)
                 {
                     isDragging = true;
                     dragOffset = transform.position - worldPos;
                 }
-            }
-            break;
+                break;
 
-        case TouchPhase.Ended:
-        case TouchPhase.Canceled:
-            isDragging = false;
-            break;
+            case TouchPhase.Moved:
+            case TouchPhase.Stationary:
+                if (isDragging)
+                {
+                    Vector3 target = worldPos + dragOffset;
+                    target.y = transform.position.y;
+                    target.x = Mathf.Clamp(target.x, minPos, maxPos);
+                    transform.position = Vector3.Lerp(transform.position, target, touchSmoothness * Time.deltaTime);
+                }
+                break;
+
+            case TouchPhase.Ended:
+            case TouchPhase.Canceled:
+                isDragging = false;
+                break;
+        }
     }
-}
-
 
     Vector3 GetWorldPositionFromScreen(Vector2 screenPos)
     {
