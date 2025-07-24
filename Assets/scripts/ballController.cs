@@ -160,7 +160,7 @@ public class ballController : MonoBehaviour
     {
         Vector3 pos = transform.position;
         pos.x = Mathf.Clamp(pos.x, minPos, maxPos);
-        pos.y = Mathf.Clamp(pos.y, -4.0f, 5.0f);
+        pos.y = Mathf.Clamp(pos.y, -3.0f, 5.0f);
         transform.position = pos;
     }
     #endregion
