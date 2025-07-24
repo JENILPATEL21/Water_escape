@@ -18,7 +18,7 @@ public class AdsManager : MonoBehaviour
         if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
-            return;
+            return;         
         }
         Instance = this;
         DontDestroyOnLoad(gameObject);
