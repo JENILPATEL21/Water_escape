@@ -1,32 +1,30 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.EventSystems;
 
-/// <summary>
-/// Controls the player ball movement, touch & tilt input, collision, invincibility, and coin collection.
-/// </summary>
+
 public class ballController : MonoBehaviour
 {
     #region Movement Settings
     public float ballSpeed = 10f;
     public float tiltSensitivity = 15f;
-    public float touchSmoothness = 10f;
-    private float minPos = -2.4f;
-    private float maxPos = 2.4f;
+    private float touchSmoothness = 10f;
+    private float minPos = -2f;
+    private float maxPos = 2f;
     #endregion
 
     #region References
     public uiManager ui;
     public GameObject explosionEffectPrefab;
-
+    public LayerMask ballLayer;
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
     private Collider2D ballCollider;
     #endregion
 
     #region Touch Control
-    [SerializeField] private LayerMask ballLayer;
     private bool isDragging = false;
-    private Vector3 dragOffset = Vector3.zero;
+    private Vector3 dragOffset;
     #endregion
 
     #region Invincibility
@@ -40,7 +38,6 @@ public class ballController : MonoBehaviour
     #endregion
 
     #region Unity Events
-
     void Awake()
     {
         ui = FindObjectOfType<uiManager>();
@@ -48,12 +45,9 @@ public class ballController : MonoBehaviour
         spriteRenderer = GetComponent<SpriteRenderer>();
         ballCollider = GetComponent<Collider2D>();
 
-        #if UNITY_ANDROID
-            currentPlatformAndroid = true;
-        #endif
-
-        if (ui == null) Debug.LogError("uiManager not found in scene!");
-        if (spriteRenderer == null) Debug.LogError("SpriteRenderer missing on ball!");
+#if UNITY_ANDROID
+        currentPlatformAndroid = true;
+#endif
     }
 
     void Start()
@@ -83,53 +77,45 @@ public class ballController : MonoBehaviour
     }
     #endregion
 
-    #region Game Start
-    public void StartBall()
-    {
-        gameStarted = true;
-        gameObject.SetActive(true);
-    }
-    #endregion
-
     #region Touch Input
-    void HandleTouchInput()
+ void HandleTouchInput()
     {
-        if (Input.touchCount == 0)
+        if (Input.touchCount > 0)
+        {
+            Touch touch = Input.GetTouch(0);
+            Vector3 worldPos = GetWorldPositionFromScreen(touch.position);
+            worldPos.z = 0;
+
+            switch (touch.phase)
+            {
+                case TouchPhase.Began:
+                    if (Vector2.Distance(worldPos, transform.position) < 1.2f)
+                    {
+                        isDragging = true;
+                        dragOffset = transform.position - worldPos;
+                    }
+                    break;
+
+                case TouchPhase.Moved:
+                case TouchPhase.Stationary:
+                    if (isDragging)
+                    {
+                        Vector3 target = worldPos + dragOffset;
+                        target.y = transform.position.y;
+                        target.x = Mathf.Clamp(target.x, minPos, maxPos);
+                        transform.position = Vector3.Lerp(transform.position, target, touchSmoothness * Time.deltaTime);
+                    }
+                    break;
+
+                case TouchPhase.Ended:
+                case TouchPhase.Canceled:
+                    isDragging = false;
+                    break;
+            }
+        }
+        else
         {
             isDragging = false;
-            return;
-        }
-
-        Touch touch = Input.GetTouch(0);
-        Vector3 worldPos = GetWorldPositionFromScreen(touch.position);
-        worldPos.z = 0;
-
-        switch (touch.phase)
-        {
-            case TouchPhase.Began:
-                Collider2D hit = Physics2D.OverlapPoint(worldPos, ballLayer);
-                if (hit != null && hit.gameObject == gameObject)
-                {
-                    isDragging = true;
-                    dragOffset = transform.position - worldPos;
-                }
-                break;
-
-            case TouchPhase.Moved:
-            case TouchPhase.Stationary:
-                if (isDragging)
-                {
-                    Vector3 target = worldPos + dragOffset;
-                    target.y = transform.position.y;
-                    target.x = Mathf.Clamp(target.x, minPos, maxPos);
-                    transform.position = Vector3.Lerp(transform.position, target, touchSmoothness * Time.deltaTime);
-                }
-                break;
-
-            case TouchPhase.Ended:
-            case TouchPhase.Canceled:
-                isDragging = false;
-                break;
         }
     }
 
